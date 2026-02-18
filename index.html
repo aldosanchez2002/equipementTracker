@@ -57,9 +57,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Use a consistent ID for the path
-        const appId = 'equipment-tracker-default';
-
         // --- Mock Data for Seeding ---
         const SEED_MACHINES = [
           { 
@@ -756,9 +753,10 @@
           useEffect(() => {
             if (!user) return;
 
-            const machinesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'machines');
-            const transRef = collection(db, 'artifacts', appId, 'users', user.uid, 'transactions');
-            const maintRef = collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance');
+            // Updated to root-level collections
+            const machinesRef = collection(db, 'machines');
+            const transRef = collection(db, 'transactions');
+            const maintRef = collection(db, 'maintenance');
 
             // Permission Error Handler
             const handlePermissionError = (err) => {
@@ -799,21 +797,21 @@
                 console.log("Starting Manual Seed...");
                 const batch = writeBatch(db);
                 
-                // Seed Machines
+                // Seed Machines (Root Level)
                 SEED_MACHINES.forEach(m => {
-                   const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'machines', m.id);
+                   const ref = doc(db, 'machines', m.id);
                    batch.set(ref, m);
                 });
 
-                // Seed Transactions
+                // Seed Transactions (Root Level)
                 SEED_TRANSACTIONS.forEach(t => {
-                   const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
+                   const ref = doc(collection(db, 'transactions'));
                    batch.set(ref, t);
                 });
                 
-                // Seed Maintenance
+                // Seed Maintenance (Root Level)
                 SEED_MAINTENANCE.forEach(m => {
-                   const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'));
+                   const ref = doc(collection(db, 'maintenance'));
                    batch.set(ref, m);
                 });
 
@@ -837,7 +835,7 @@
              if (!user) return;
              // Check if empty and seed automatically once
              const checkAndSeed = async () => {
-                 const machinesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'machines');
+                 const machinesRef = collection(db, 'machines');
                  try {
                     const snap = await getDocs(machinesRef);
                     if (snap.empty) {
@@ -856,7 +854,7 @@
           const handleAddMachine = async (newMachine) => {
             if (!user) return;
             try {
-              await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'machines'), newMachine);
+              await addDoc(collection(db, 'machines'), newMachine);
               setView('list');
             } catch (e) { console.error("Error adding machine: ", e); }
           };
@@ -864,7 +862,7 @@
           const handleRent = async (newTx) => {
             if (!user) return;
             try {
-              await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), newTx);
+              await addDoc(collection(db, 'transactions'), newTx);
               setView('calendar');
             } catch (e) { console.error("Error renting: ", e); }
           };
@@ -881,8 +879,8 @@
             };
 
             try {
-              // 1. Add to MAINTENANCE Collection (Refactored from Transactions)
-              await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'), newTx);
+              // 1. Add to MAINTENANCE Collection
+              await addDoc(collection(db, 'maintenance'), newTx);
               
               // 2. Update Machine Next Date
               const machine = machines.find(m => m.id === machineId);
@@ -901,7 +899,7 @@
                     nextDt = new Date(date);
                 }
                 
-                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'machines', machineId), {
+                await updateDoc(doc(db, 'machines', machineId), {
                    'maintenance.nextDate': nextDt.toISOString().split('T')[0]
                 });
               }
@@ -912,7 +910,7 @@
           const saveRate = async (id) => {
             if (!user) return;
             try {
-              await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'machines', id), {
+              await updateDoc(doc(db, 'machines', id), {
                 baseRate: Number(editRate)
               });
               setEditingId(null);
