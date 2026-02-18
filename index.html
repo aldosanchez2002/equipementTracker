@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipment Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script type="importmap">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="importmap">
     {
         "imports": {
             "react": "https://esm.sh/react@18.2.0",
@@ -18,1056 +19,1076 @@
         }
     }
     </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f1f5f9;
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { Plus, Calendar as CalendarIcon, Truck, DollarSign, Wrench, ChevronLeft, ChevronRight, Search, CheckCircle, AlertCircle, AlertTriangle, Clock, Pencil, Save, X, Database, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+  <div id="root"></div>
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useMemo } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { Plus, Calendar as CalendarIcon, Truck, DollarSign, Wrench, ChevronLeft, ChevronRight, Search, CheckCircle, AlertCircle, AlertTriangle, Clock, Pencil, Save, X, Database, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 
-        // --- Firebase Imports ---
-        import { initializeApp } from "firebase/app";
-        import { 
-          getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, 
-          query, getDocs, writeBatch, setDoc 
-        } from "firebase/firestore";
-        import { 
-          getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
-        } from "firebase/auth";
+    // --- Firebase Imports ---
+    import { initializeApp } from "firebase/app";
+    import {
+      getFirestore, collection, addDoc, updateDoc, doc, onSnapshot,
+      query, getDocs, writeBatch, setDoc
+    } from "firebase/firestore";
+    import {
+      getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken
+    } from "firebase/auth";
 
-        // --- Configuration ---
-        // 1. Try to use the environment's built-in config (Canvas Preview) to ensure Auth works immediately.
-        // 2. Fallback to the user's provided config (Local/Exported) for persistent usage.
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyATXRPfV9NgttQ3ompCk-xeVOqvm6uIU6s",
-            authDomain: "equipmenttracker-857f8.firebaseapp.com",
-            projectId: "equipmenttracker-857f8",
-            storageBucket: "equipmenttracker-857f8.firebasestorage.app",
-            messagingSenderId: "1088031272040",
-            appId: "1:1088031272040:web:44cd3b106b66f2535a5fdd"
-        };
+    // --- Configuration ---
+    // 1. Try to use the environment's built-in config (Canvas Preview) to ensure Auth works immediately.
+    // 2. Fallback to the user's provided config (Local/Exported) for persistent usage.
+    const firebaseConfig = {
+      apiKey: "AIzaSyATXRPfV9NgttQ3ompCk-xeVOqvm6uIU6s",
+      authDomain: "equipmenttracker-857f8.firebaseapp.com",
+      projectId: "equipmenttracker-857f8",
+      storageBucket: "equipmenttracker-857f8.firebasestorage.app",
+      messagingSenderId: "1088031272040",
+      appId: "1:1088031272040:web:44cd3b106b66f2535a5fdd"
+    };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-        // Use the environment's App ID to segregate data in the shared sandbox, 
-        // or a default ID for the private project.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'equipment-tracker-default';
+    // Use the environment's App ID to segregate data in the shared sandbox, 
+    // or a default ID for the private project.
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'equipment-tracker-default';
 
-        // --- Mock Data for Seeding ---
-        const SEED_MACHINES = [
-          { 
-            id: "1", 
-            name: 'CAT 320 Excavator', 
-            type: 'Excavator', 
-            loan: { active: true, payment: 1200, interest: 4.5 }, 
-            maintenance: { nextDate: '2023-11-15', frequency: 'Monthly' },
-            baseRate: 500 
+    // --- Mock Data for Seeding ---
+    const SEED_MACHINES = [
+      {
+        id: "1",
+        name: 'CAT 320 Excavator',
+        type: 'Excavator',
+        loan: { active: true, payment: 1200, interest: 4.5 },
+        maintenance: { nextDate: '2023-11-15', frequency: 'Monthly' },
+        baseRate: 500
+      },
+      {
+        id: "2",
+        name: 'JLG 400S Boom Lift',
+        type: 'Lift',
+        loan: { active: false, payment: 0, interest: 0 },
+        maintenance: { nextDate: '2023-12-01', frequency: 'Quarterly' },
+        baseRate: 250
+      },
+      {
+        id: "3",
+        name: 'Bobcat T770',
+        type: 'Skid Steer',
+        loan: { active: true, payment: 800, interest: 3.2 },
+        maintenance: { nextDate: '2023-11-20', frequency: 'Monthly' },
+        baseRate: 300
+      }
+    ];
+
+    const SEED_TRANSACTIONS = [
+      { machineId: "1", type: 'rental', customer: 'Acme Corp', startDate: '2023-10-25', endDate: '2023-11-05', rate: 500 },
+      { machineId: "2", type: 'rental', customer: 'BuildIt Inc', startDate: '2023-11-02', endDate: '2023-11-04', rate: 275 },
+    ];
+
+    const SEED_MAINTENANCE = [
+      { machineId: "1", description: 'Routine Service', cost: 150, status: 'completed', date: '2023-11-15', completedAt: '2023-11-15T10:00:00Z' }
+    ];
+
+    // --- Helper Functions ---
+    const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+    const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      return new Date(dateString).toLocaleDateString(undefined, options);
+    };
+
+    // --- Components ---
+
+    // 1. Add Machine Screen
+    const AddMachine = ({ onAdd, onCancel }) => {
+      const [form, setForm] = useState({
+        name: '', type: 'Excavator', baseRate: '',
+        hasLoan: false, loanPayment: '', loanInterest: '',
+        maintNext: '', maintFreq: 'Monthly'
+      });
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onAdd({
+          name: form.name,
+          type: form.type,
+          baseRate: Number(form.baseRate),
+          loan: {
+            active: form.hasLoan,
+            payment: form.hasLoan ? Number(form.loanPayment) : 0,
+            interest: form.hasLoan ? Number(form.loanInterest) : 0
           },
-          { 
-            id: "2", 
-            name: 'JLG 400S Boom Lift', 
-            type: 'Lift', 
-            loan: { active: false, payment: 0, interest: 0 }, 
-            maintenance: { nextDate: '2023-12-01', frequency: 'Quarterly' },
-            baseRate: 250 
-          },
-          { 
-            id: "3", 
-            name: 'Bobcat T770', 
-            type: 'Skid Steer', 
-            loan: { active: true, payment: 800, interest: 3.2 }, 
-            maintenance: { nextDate: '2023-11-20', frequency: 'Monthly' },
-            baseRate: 300 
+          maintenance: {
+            nextDate: form.maintNext,
+            frequency: form.maintFreq
           }
-        ];
+        });
+      };
 
-        const SEED_TRANSACTIONS = [
-          { machineId: "1", type: 'rental', customer: 'Acme Corp', startDate: '2023-10-25', endDate: '2023-11-05', rate: 500 },
-          { machineId: "2", type: 'rental', customer: 'BuildIt Inc', startDate: '2023-11-02', endDate: '2023-11-04', rate: 275 },
-        ];
-
-        const SEED_MAINTENANCE = [
-          { machineId: "1", description: 'Routine Service', cost: 150, status: 'completed', date: '2023-11-15', completedAt: '2023-11-15T10:00:00Z' }
-        ];
-
-        // --- Helper Functions ---
-        const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-        const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
-
-        const formatDate = (dateString) => {
-          if (!dateString) return '';
-          const options = { month: 'short', day: 'numeric', year: 'numeric' };
-          return new Date(dateString).toLocaleDateString(undefined, options);
-        };
-
-        // --- Components ---
-
-        // 1. Add Machine Screen
-        const AddMachine = ({ onAdd, onCancel }) => {
-          const [form, setForm] = useState({
-            name: '', type: 'Excavator', baseRate: '', 
-            hasLoan: false, loanPayment: '', loanInterest: '',
-            maintNext: '', maintFreq: 'Monthly'
-          });
-
-          const handleSubmit = (e) => {
-            e.preventDefault();
-            onAdd({
-              name: form.name,
-              type: form.type,
-              baseRate: Number(form.baseRate),
-              loan: { 
-                active: form.hasLoan, 
-                payment: form.hasLoan ? Number(form.loanPayment) : 0, 
-                interest: form.hasLoan ? Number(form.loanInterest) : 0 
-              },
-              maintenance: {
-                nextDate: form.maintNext,
-                frequency: form.maintFreq
-              }
-            });
-          };
-
-          return (
-            <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Truck className="w-6 h-6 text-blue-600" /> Add New Equipment
-              </h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Machine Name</label>
-                    <input required type="text" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                      value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. CAT 320" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Type</label>
-                    <select className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                      <option>Excavator</option>
-                      <option>Bulldozer</option>
-                      <option>Crane</option>
-                      <option>Loader</option>
-                      <option>Lift</option>
-                      <option>Skid Steer</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Base Daily Rate ($)</label>
-                    <input required type="number" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={form.baseRate} onChange={e => setForm({...form, baseRate: e.target.value})} />
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                  <label className="flex items-center gap-2 font-medium text-slate-700 mb-3 cursor-pointer">
-                    <input type="checkbox" checked={form.hasLoan} onChange={e => setForm({...form, hasLoan: e.target.checked})} 
-                      className="w-4 h-4 text-blue-600 rounded" />
-                    Active Loan / Financing
-                  </label>
-                  {form.hasLoan && (
-                    <div className="grid grid-cols-2 gap-4 animate-fadeIn">
-                      <div>
-                        <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Monthly Payment</label>
-                        <input required type="number" className="w-full p-2 border rounded bg-white" placeholder="0.00"
-                          value={form.loanPayment} onChange={e => setForm({...form, loanPayment: e.target.value})} />
-                      </div>
-                      <div>
-                        <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Interest Rate (%)</label>
-                        <input required type="number" step="0.1" className="w-full p-2 border rounded bg-white" placeholder="0.0"
-                          value={form.loanInterest} onChange={e => setForm({...form, loanInterest: e.target.value})} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Next Maintenance</label>
-                    <input required type="date" className="w-full p-2 border rounded-lg"
-                      value={form.maintNext} onChange={e => setForm({...form, maintNext: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Frequency</label>
-                    <select className="w-full p-2 border rounded-lg"
-                      value={form.maintFreq} onChange={e => setForm({...form, maintFreq: e.target.value})}>
-                      <option>Weekly</option>
-                      <option>Monthly</option>
-                      <option>Quarterly</option>
-                      <option>Annually</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={onCancel} className="flex-1 p-3 text-slate-600 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
-                  <button type="submit" className="flex-1 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm">Save Machine</button>
-                </div>
-              </form>
-            </div>
-          );
-        };
-
-        // 2. Rent Out Screen
-        const RentMachine = ({ machines, onRent, onCancel }) => {
-          const [form, setForm] = useState({
-            machineId: machines[0]?.id || '',
-            customer: '',
-            startDate: '',
-            endDate: '',
-            rate: machines[0]?.baseRate || ''
-          });
-
-          // Update rate when machine changes
-          const handleMachineChange = (id) => {
-            const m = machines.find(x => x.id === id);
-            setForm({ ...form, machineId: id, rate: m ? m.baseRate : '' });
-          };
-
-          const handleSubmit = (e) => {
-            e.preventDefault();
-            onRent({
-              machineId: form.machineId,
-              type: 'rental',
-              customer: form.customer,
-              startDate: form.startDate,
-              endDate: form.endDate,
-              rate: Number(form.rate)
-            });
-          };
-
-          return (
-            <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <DollarSign className="w-6 h-6 text-green-600" /> New Rental Agreement
-              </h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">Select Equipment</label>
-                  <select required className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white transition-colors"
-                    value={form.machineId} onChange={e => handleMachineChange(e.target.value)}>
-                    {machines.map(m => (
-                      <option key={m.id} value={m.id}>{m.name} ({m.type}) - Base: ${m.baseRate}/day</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">Customer / Project Name</label>
-                  <input required type="text" className="w-full p-2 border rounded-lg"
-                    value={form.customer} onChange={e => setForm({...form, customer: e.target.value})} placeholder="e.g. Downtown Construction LLC" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Start Date</label>
-                    <input required type="date" className="w-full p-2 border rounded-lg"
-                      value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">End Date</label>
-                    <input required type="date" className="w-full p-2 border rounded-lg"
-                      value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">Daily Rate (Override Allowed)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-slate-400">$</span>
-                    <input required type="number" className="w-full pl-7 p-2 border rounded-lg font-mono text-slate-700"
-                      value={form.rate} onChange={e => setForm({...form, rate: e.target.value})} />
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">Default is based on machine configuration.</p>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={onCancel} className="flex-1 p-3 text-slate-600 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
-                  <button type="submit" className="flex-1 p-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm">Confirm Rental</button>
-                </div>
-              </form>
-            </div>
-          );
-        };
-
-        // 3. Maintenance Tracker Screen
-        const MaintenanceTracker = ({ machines, onSchedule }) => {
-          const [form, setForm] = useState({
-            machineId: machines[0]?.id || '',
-            date: '',
-            description: 'Routine Service',
-            cost: ''
-          });
-          
-          // Track if a specific upcoming item was selected to enable Completion
-          const [isUpcomingSelected, setIsUpcomingSelected] = useState(false);
-
-          // Sort machines by next maintenance date
-          const sortedMachines = useMemo(() => {
-            return [...machines].sort((a, b) => new Date(a.maintenance.nextDate) - new Date(b.maintenance.nextDate));
-          }, [machines]);
-
-          // Handle both types of actions: 'schedule' or 'complete'
-          const handleAction = (e, actionType) => {
-            e.preventDefault();
-            if(!form.machineId) return;
-            
-            onSchedule({
-              machineId: form.machineId,
-              date: form.date,
-              description: form.description,
-              cost: Number(form.cost),
-              actionType: actionType // 'schedule' or 'complete'
-            });
-            
-            // Reset fields
-            setForm(prev => ({ ...prev, description: 'Routine Service', cost: '' }));
-            if(actionType === 'complete') {
-                setIsUpcomingSelected(false);
-            }
-          };
-
-          const today = new Date().toISOString().split('T')[0];
-
-          const getStatusColor = (nextDate) => {
-            if (!nextDate) return 'bg-slate-100 text-slate-500';
-            if (nextDate < today) return 'bg-red-100 text-red-700 border-red-200';
-            const daysUntil = (new Date(nextDate) - new Date(today)) / (1000 * 60 * 60 * 24);
-            if (daysUntil <= 7) return 'bg-amber-100 text-amber-700 border-amber-200';
-            return 'bg-green-100 text-green-700 border-green-200';
-          };
-
-          return (
-            <div className="space-y-6">
-              {/* Quick Schedule Form */}
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Wrench className="w-6 h-6 text-amber-600" /> Maintenance Management
-                </h2>
-                <form className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                  <div className="md:col-span-3">
-                    <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Machine</label>
-                    <select className="w-full p-2 border rounded-lg bg-slate-50 text-sm"
-                      value={form.machineId} 
-                      onChange={e => {
-                          setForm({...form, machineId: e.target.value});
-                          setIsUpcomingSelected(false); // Manual change disables completion
-                      }}>
-                      {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label>
-                    <input required type="date" className="w-full p-2 border rounded-lg text-sm"
-                      value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
-                  </div>
-                  <div className="md:col-span-3">
-                     <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Task / Description</label>
-                     <input required type="text" className="w-full p-2 border rounded-lg text-sm" placeholder="e.g. Oil Change"
-                      value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
-                  </div>
-                  <div className="md:col-span-2">
-                     <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Est. Cost ($)</label>
-                     <input type="number" className="w-full p-2 border rounded-lg text-sm" placeholder="0.00"
-                      value={form.cost} onChange={e => setForm({...form, cost: e.target.value})} />
-                  </div>
-                  <div className="md:col-span-2 flex gap-1">
-                     <button 
-                       onClick={(e) => handleAction(e, 'schedule')}
-                       className="flex-1 p-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-medium"
-                       title="Update date or add ad-hoc record"
-                     >
-                       Schedule
-                    </button>
-                    {isUpcomingSelected ? (
-                        <button 
-                          onClick={(e) => handleAction(e, 'complete')}
-                          className="flex-1 p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium animate-pulse"
-                          title="Log completion & advance cycle"
-                        >
-                          Mark Completed
-                        </button>
-                    ) : (
-                        <div className="flex-1 p-2 bg-slate-100 text-slate-400 rounded-lg text-xs font-medium text-center border border-slate-200 cursor-not-allowed flex items-center justify-center" title="Select an upcoming item from the list below to complete it">
-                            Mark Completed
-                        </div>
-                    )}
-                  </div>
-                </form>
+      return (
+        <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <Truck className="w-6 h-6 text-blue-600" /> Add New Equipment
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Machine Name</label>
+                <input required type="text" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. CAT 320" />
               </div>
-
-              {/* Tracker List */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                  <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                    <Clock className="w-4 h-4" /> Upcoming Maintenance
-                  </h3>
-                  <span className="text-xs text-slate-500">Sorted by urgency</span>
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {sortedMachines.map(m => {
-                    const statusClass = getStatusColor(m.maintenance.nextDate);
-                    const isOverdue = m.maintenance.nextDate < today;
-                    
-                    return (
-                      <div key={m.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-2 h-12 rounded-full ${isOverdue ? 'bg-red-500' : 'bg-slate-200'}`}></div>
-                          <div>
-                            <h4 className="font-bold text-slate-800">{m.name}</h4>
-                            <p className="text-xs text-slate-500">{m.type} • {m.maintenance.frequency}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                           <div className={`px-3 py-1 rounded-full text-xs font-bold border ${statusClass}`}>
-                              {isOverdue ? 'OVERDUE: ' : 'Due: '} {formatDate(m.maintenance.nextDate)}
-                           </div>
-                           <button 
-                             onClick={() => {
-                                 setForm({ ...form, machineId: m.id, date: m.maintenance.nextDate });
-                                 setIsUpcomingSelected(true);
-                             }}
-                             className="text-xs bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-colors"
-                           >
-                             Select
-                           </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Type</label>
+                <select className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+                  <option>Excavator</option>
+                  <option>Bulldozer</option>
+                  <option>Crane</option>
+                  <option>Loader</option>
+                  <option>Lift</option>
+                  <option>Skid Steer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Base Daily Rate ($)</label>
+                <input required type="number" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={form.baseRate} onChange={e => setForm({ ...form, baseRate: e.target.value })} />
               </div>
             </div>
-          );
-        };
 
-        // 4. Calendar View
-        const CalendarView = ({ machines, transactions, maintenanceEvents }) => {
-          const [currentDate, setCurrentDate] = useState(new Date());
-          const [selectedMachineId, setSelectedMachineId] = useState('all');
-
-          const year = currentDate.getFullYear();
-          const month = currentDate.getMonth();
-
-          const daysInMonth = getDaysInMonth(year, month);
-          const startDay = getFirstDayOfMonth(year, month);
-          
-          const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-          const emptyDays = Array.from({ length: startDay }, (_, i) => i);
-
-          // Combine Transactions (rentals) and Maintenance Events
-          const allEvents = useMemo(() => {
-              const rentals = transactions.filter(t => t.type === 'rental');
-              const maintenance = maintenanceEvents.map(m => ({
-                  ...m,
-                  type: 'maintenance',
-                  startDate: m.date,
-                  endDate: m.date,
-                  rate: m.cost
-              }));
-              return [...rentals, ...maintenance];
-          }, [transactions, maintenanceEvents]);
-
-          // Filter events
-          const monthEvents = useMemo(() => {
-            return allEvents.filter(t => {
-              const tStart = new Date(t.startDate);
-              const tEnd = new Date(t.endDate);
-              const mStart = new Date(year, month, 1);
-              const mEnd = new Date(year, month + 1, 0);
-              
-              const machineMatch = selectedMachineId === 'all' || t.machineId === selectedMachineId;
-              const dateOverlap = tStart <= mEnd && tEnd >= mStart;
-              
-              return machineMatch && dateOverlap;
-            });
-          }, [allEvents, year, month, selectedMachineId]);
-
-          const getEventsForDay = (day) => {
-            const dateStr = new Date(year, month, day).toISOString().split('T')[0];
-            return monthEvents.filter(t => t.startDate <= dateStr && t.endDate >= dateStr);
-          };
-
-          const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-          const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-
-          return (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              {/* Calendar Header */}
-              <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50">
-                <div className="flex items-center gap-4">
-                  <button onClick={prevMonth} className="p-1 hover:bg-slate-200 rounded"><ChevronLeft className="w-5 h-5 text-slate-600"/></button>
-                  <h2 className="text-lg font-bold text-slate-800 w-32 text-center">
-                    {currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
-                  </h2>
-                  <button onClick={nextMonth} className="p-1 hover:bg-slate-200 rounded"><ChevronRight className="w-5 h-5 text-slate-600"/></button>
+            <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+              <label className="flex items-center gap-2 font-medium text-slate-700 mb-3 cursor-pointer">
+                <input type="checkbox" checked={form.hasLoan} onChange={e => setForm({ ...form, hasLoan: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded" />
+                Active Loan / Financing
+              </label>
+              {form.hasLoan && (
+                <div className="grid grid-cols-2 gap-4 animate-fadeIn">
+                  <div>
+                    <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Monthly Payment</label>
+                    <input required type="number" className="w-full p-2 border rounded bg-white" placeholder="0.00"
+                      value={form.loanPayment} onChange={e => setForm({ ...form, loanPayment: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase font-bold text-slate-400 mb-1">Interest Rate (%)</label>
+                    <input required type="number" step="0.1" className="w-full p-2 border rounded bg-white" placeholder="0.0"
+                      value={form.loanInterest} onChange={e => setForm({ ...form, loanInterest: e.target.value })} />
+                  </div>
                 </div>
+              )}
+            </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Filter:</span>
-                  <select 
-                    className="p-2 border rounded-lg text-sm bg-white shadow-sm w-full sm:w-64 outline-none focus:ring-1 focus:ring-blue-500"
-                    value={selectedMachineId}
-                    onChange={(e) => setSelectedMachineId(e.target.value)}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Next Maintenance</label>
+                <input required type="date" className="w-full p-2 border rounded-lg"
+                  value={form.maintNext} onChange={e => setForm({ ...form, maintNext: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Frequency</label>
+                <select className="w-full p-2 border rounded-lg"
+                  value={form.maintFreq} onChange={e => setForm({ ...form, maintFreq: e.target.value })}>
+                  <option>Weekly</option>
+                  <option>Monthly</option>
+                  <option>Quarterly</option>
+                  <option>Annually</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button type="button" onClick={onCancel} className="flex-1 p-3 text-slate-600 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+              <button type="submit" className="flex-1 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm">Save Machine</button>
+            </div>
+          </form>
+        </div>
+      );
+    };
+
+    // 2. Rent Out Screen
+    const RentMachine = ({ machines, onRent, onCancel }) => {
+      const [form, setForm] = useState({
+        machineId: machines[0]?.id || '',
+        customer: '',
+        startDate: '',
+        endDate: '',
+        rate: machines[0]?.baseRate || ''
+      });
+
+      // Update rate when machine changes
+      const handleMachineChange = (id) => {
+        const m = machines.find(x => x.id === id);
+        setForm({ ...form, machineId: id, rate: m ? m.baseRate : '' });
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onRent({
+          machineId: form.machineId,
+          type: 'rental',
+          customer: form.customer,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          rate: Number(form.rate)
+        });
+      };
+
+      return (
+        <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-green-600" /> New Rental Agreement
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1">Select Equipment</label>
+              <select required className="w-full p-3 border rounded-lg bg-slate-50 focus:bg-white transition-colors"
+                value={form.machineId} onChange={e => handleMachineChange(e.target.value)}>
+                {machines.map(m => (
+                  <option key={m.id} value={m.id}>{m.name} ({m.type}) - Base: ${m.baseRate}/day</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1">Customer / Project Name</label>
+              <input required type="text" className="w-full p-2 border rounded-lg"
+                value={form.customer} onChange={e => setForm({ ...form, customer: e.target.value })} placeholder="e.g. Downtown Construction LLC" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Start Date</label>
+                <input required type="date" className="w-full p-2 border rounded-lg"
+                  value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">End Date</label>
+                <input required type="date" className="w-full p-2 border rounded-lg"
+                  value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1">Daily Rate (Override Allowed)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-slate-400">$</span>
+                <input required type="number" className="w-full pl-7 p-2 border rounded-lg font-mono text-slate-700"
+                  value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} />
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Default is based on machine configuration.</p>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button type="button" onClick={onCancel} className="flex-1 p-3 text-slate-600 hover:bg-slate-50 rounded-lg font-medium">Cancel</button>
+              <button type="submit" className="flex-1 p-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm">Confirm Rental</button>
+            </div>
+          </form>
+        </div>
+      );
+    };
+
+    // 3. Maintenance Tracker Screen
+    const MaintenanceTracker = ({ machines, onSchedule }) => {
+      const [form, setForm] = useState({
+        machineId: machines[0]?.id || '',
+        date: '',
+        description: 'Routine Service',
+        cost: ''
+      });
+
+      // Track if a specific upcoming item was selected to enable Completion
+      const [isUpcomingSelected, setIsUpcomingSelected] = useState(false);
+
+      // Sort machines by next maintenance date
+      const sortedMachines = useMemo(() => {
+        return [...machines].sort((a, b) => new Date(a.maintenance.nextDate) - new Date(b.maintenance.nextDate));
+      }, [machines]);
+
+      // Handle both types of actions: 'schedule' or 'complete'
+      const handleAction = (e, actionType) => {
+        e.preventDefault();
+        if (!form.machineId) return;
+
+        onSchedule({
+          machineId: form.machineId,
+          date: form.date,
+          description: form.description,
+          cost: Number(form.cost),
+          actionType: actionType // 'schedule' or 'complete'
+        });
+
+        // Reset fields
+        setForm(prev => ({ ...prev, description: 'Routine Service', cost: '' }));
+        if (actionType === 'complete') {
+          setIsUpcomingSelected(false);
+        }
+      };
+
+      const today = new Date().toISOString().split('T')[0];
+
+      const getStatusColor = (nextDate) => {
+        if (!nextDate) return 'bg-slate-100 text-slate-500';
+        if (nextDate < today) return 'bg-red-100 text-red-700 border-red-200';
+        const daysUntil = (new Date(nextDate) - new Date(today)) / (1000 * 60 * 60 * 24);
+        if (daysUntil <= 7) return 'bg-amber-100 text-amber-700 border-amber-200';
+        return 'bg-green-100 text-green-700 border-green-200';
+      };
+
+      return (
+        <div className="space-y-6">
+          {/* Quick Schedule Form */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Wrench className="w-6 h-6 text-amber-600" /> Maintenance Management
+            </h2>
+            <form className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+              <div className="md:col-span-3">
+                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Machine</label>
+                <select className="w-full p-2 border rounded-lg bg-slate-50 text-sm"
+                  value={form.machineId}
+                  onChange={e => {
+                    setForm({ ...form, machineId: e.target.value });
+                    setIsUpcomingSelected(false); // Manual change disables completion
+                  }}>
+                  {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label>
+                <input required type="date" className="w-full p-2 border rounded-lg text-sm"
+                  value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Task / Description</label>
+                <input required type="text" className="w-full p-2 border rounded-lg text-sm" placeholder="e.g. Oil Change"
+                  value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Est. Cost ($)</label>
+                <input type="number" className="w-full p-2 border rounded-lg text-sm" placeholder="0.00"
+                  value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} />
+              </div>
+              <div className="md:col-span-2 flex gap-1">
+                <button
+                  onClick={(e) => handleAction(e, 'schedule')}
+                  className="flex-1 p-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-medium"
+                  title="Update date or add ad-hoc record"
+                >
+                  Schedule
+                </button>
+                {isUpcomingSelected ? (
+                  <button
+                    onClick={(e) => handleAction(e, 'complete')}
+                    className="flex-1 p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium animate-pulse"
+                    title="Log completion & advance cycle"
                   >
-                    <option value="all">All Equipment</option>
-                    {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
-                </div>
+                    Mark Completed
+                  </button>
+                ) : (
+                  <div className="flex-1 p-2 bg-slate-100 text-slate-400 rounded-lg text-xs font-medium text-center border border-slate-200 cursor-not-allowed flex items-center justify-center" title="Select an upcoming item from the list below to complete it">
+                    Mark Completed
+                  </div>
+                )}
               </div>
+            </form>
+          </div>
 
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 text-center border-b border-slate-100 bg-slate-50 text-xs font-semibold text-slate-400 py-2">
-                <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
-              </div>
-              <div className="grid grid-cols-7 auto-rows-fr bg-slate-100 gap-px">
-                {emptyDays.map(d => <div key={`empty-${d}`} className="bg-white min-h-[100px]" />)}
-                
-                {daysArray.map(day => {
-                  const events = getEventsForDay(day);
-                  const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
-                  
-                  return (
-                    <div key={day} className={`bg-white min-h-[100px] p-2 hover:bg-slate-50 transition-colors ${isToday ? 'bg-blue-50/30' : ''}`}>
-                      <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-slate-700'}`}>{day}</div>
-                      <div className="space-y-1">
-                        {events.map((ev, idx) => {
-                           const machine = machines.find(m => m.id === ev.machineId);
-                           const isMaintenance = ev.type === 'maintenance';
-                           return (
-                             <div key={idx} 
-                                className={`text-[10px] p-1 rounded border truncate
-                                ${isMaintenance 
-                                  ? 'bg-amber-100 border-amber-200 text-amber-800' 
-                                  : 'bg-blue-100 border-blue-200 text-blue-800'}`}
-                                title={`${machine?.name} - ${isMaintenance ? ev.description : ev.customer}`}
-                              >
-                               <span className="font-bold">{machine?.name.split(' ')[0]}</span>: {isMaintenance ? ev.description : ev.customer}
-                             </div>
-                           )
-                        })}
+          {/* Tracker List */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <Clock className="w-4 h-4" /> Upcoming Maintenance
+              </h3>
+              <span className="text-xs text-slate-500">Sorted by urgency</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {sortedMachines.map(m => {
+                const statusClass = getStatusColor(m.maintenance.nextDate);
+                const isOverdue = m.maintenance.nextDate < today;
+
+                return (
+                  <div key={m.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-2 h-12 rounded-full ${isOverdue ? 'bg-red-500' : 'bg-slate-200'}`}></div>
+                      <div>
+                        <h4 className="font-bold text-slate-800">{m.name}</h4>
+                        <p className="text-xs text-slate-500">{m.type} • {m.maintenance.frequency}</p>
                       </div>
                     </div>
-                  );
-                })}
+
+                    <div className="flex items-center gap-4">
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold border ${statusClass}`}>
+                        {isOverdue ? 'OVERDUE: ' : 'Due: '} {formatDate(m.maintenance.nextDate)}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setForm({ ...form, machineId: m.id, date: m.maintenance.nextDate });
+                          setIsUpcomingSelected(true);
+                        }}
+                        className="text-xs bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-colors"
+                      >
+                        Select
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // 4. Calendar View
+    const CalendarView = ({ machines, transactions, maintenanceEvents }) => {
+      const [currentDate, setCurrentDate] = useState(new Date());
+      const [selectedMachineId, setSelectedMachineId] = useState('all');
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      const daysInMonth = getDaysInMonth(year, month);
+      const startDay = getFirstDayOfMonth(year, month);
+
+      const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+      const emptyDays = Array.from({ length: startDay }, (_, i) => i);
+
+      // Combine Transactions (rentals) and Maintenance Events
+      const allEvents = useMemo(() => {
+        const rentals = transactions.filter(t => t.type === 'rental');
+        const maintenance = maintenanceEvents.map(m => ({
+          ...m,
+          type: 'maintenance',
+          startDate: m.date,
+          endDate: m.date,
+          rate: m.cost
+        }));
+        return [...rentals, ...maintenance];
+      }, [transactions, maintenanceEvents]);
+
+      // Filter events
+      const monthEvents = useMemo(() => {
+        return allEvents.filter(t => {
+          const tStart = new Date(t.startDate);
+          const tEnd = new Date(t.endDate);
+          const mStart = new Date(year, month, 1);
+          const mEnd = new Date(year, month + 1, 0);
+
+          const machineMatch = selectedMachineId === 'all' || t.machineId === selectedMachineId;
+          const dateOverlap = tStart <= mEnd && tEnd >= mStart;
+
+          return machineMatch && dateOverlap;
+        });
+      }, [allEvents, year, month, selectedMachineId]);
+
+      const getEventsForDay = (day) => {
+        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+        return monthEvents.filter(t => t.startDate <= dateStr && t.endDate >= dateStr);
+      };
+
+      const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+      const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          {/* Calendar Header */}
+          <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50">
+            <div className="flex items-center gap-4">
+              <button onClick={prevMonth} className="p-1 hover:bg-slate-200 rounded"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
+              <h2 className="text-lg font-bold text-slate-800 w-32 text-center">
+                {currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
+              </h2>
+              <button onClick={nextMonth} className="p-1 hover:bg-slate-200 rounded"><ChevronRight className="w-5 h-5 text-slate-600" /></button>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Filter:</span>
+              <select
+                className="p-2 border rounded-lg text-sm bg-white shadow-sm w-full sm:w-64 outline-none focus:ring-1 focus:ring-blue-500"
+                value={selectedMachineId}
+                onChange={(e) => setSelectedMachineId(e.target.value)}
+              >
+                <option value="all">All Equipment</option>
+                {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 text-center border-b border-slate-100 bg-slate-50 text-xs font-semibold text-slate-400 py-2">
+            <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+          </div>
+          <div className="grid grid-cols-7 auto-rows-fr bg-slate-100 gap-px">
+            {emptyDays.map(d => <div key={`empty-${d}`} className="bg-white min-h-[100px]" />)}
+
+            {daysArray.map(day => {
+              const events = getEventsForDay(day);
+              const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+
+              return (
+                <div key={day} className={`bg-white min-h-[100px] p-2 hover:bg-slate-50 transition-colors ${isToday ? 'bg-blue-50/30' : ''}`}>
+                  <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-slate-700'}`}>{day}</div>
+                  <div className="space-y-1">
+                    {events.map((ev, idx) => {
+                      const machine = machines.find(m => m.id === ev.machineId);
+                      const isMaintenance = ev.type === 'maintenance';
+                      return (
+                        <div key={idx}
+                          className={`text-[10px] p-1 rounded border truncate
+                                ${isMaintenance
+                              ? 'bg-amber-100 border-amber-200 text-amber-800'
+                              : 'bg-blue-100 border-blue-200 text-blue-800'}`}
+                          title={`${machine?.name} - ${isMaintenance ? ev.description : ev.customer}`}
+                        >
+                          <span className="font-bold">{machine?.name.split(' ')[0]}</span>: {isMaintenance ? ev.description : ev.customer}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    // 5. Performance View
+    const PerformanceView = ({ machines, transactions, maintenanceEvents }) => {
+      // Current Month Metrics
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+      const monthStart = new Date(currentYear, currentMonth, 1);
+      const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+      const metrics = useMemo(() => {
+        return machines.map(m => {
+          // 1. Calculate Booked Days for this month
+          let bookedDays = 0;
+          let rentalIncome = 0;
+          let maintenanceCost = 0;
+
+          // Process Rentals from Transactions
+          const machineRentals = transactions.filter(t => t.machineId === m.id && t.type === 'rental');
+          machineRentals.forEach(t => {
+            const tStart = new Date(t.startDate);
+            const tEnd = new Date(t.endDate);
+
+            // Start of overlap: max(tx_start, month_start)
+            const startOverlap = tStart < monthStart ? monthStart : tStart;
+            // End of overlap: min(tx_end, month_end)
+            const endOverlap = tEnd > monthEnd ? monthEnd : tEnd;
+
+            if (startOverlap <= endOverlap) {
+              const days = (endOverlap - startOverlap) / (1000 * 60 * 60 * 24) + 1;
+              bookedDays += days;
+              rentalIncome += (days * t.rate);
+            }
+          });
+
+          // Process Maintenance Costs from Maintenance Collection
+          const machineMaint = maintenanceEvents.filter(me => me.machineId === m.id);
+          machineMaint.forEach(me => {
+            const meDate = new Date(me.date);
+            if (meDate >= monthStart && meDate <= monthEnd) {
+              maintenanceCost += (me.cost || 0);
+            }
+          });
+
+          const vacantDays = daysInMonth - bookedDays;
+          const loanCost = m.loan.active ? m.loan.payment : 0;
+          const totalExpenses = loanCost + maintenanceCost;
+          const netProfit = rentalIncome - totalExpenses;
+
+          return {
+            ...m,
+            bookedDays,
+            vacantDays,
+            rentalIncome,
+            totalExpenses,
+            netProfit
+          };
+        });
+      }, [machines, transactions, maintenanceEvents, currentYear, currentMonth]);
+
+      const totals = metrics.reduce((acc, curr) => ({
+        revenue: acc.revenue + curr.rentalIncome,
+        expenses: acc.expenses + curr.totalExpenses,
+        profit: acc.profit + curr.netProfit
+      }), { revenue: 0, expenses: 0, profit: 0 });
+
+      return (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Total Revenue</p>
+                  <h3 className="text-2xl font-bold text-slate-800 mt-1">${totals.revenue.toLocaleString()}</h3>
+                </div>
+                <div className="bg-green-100 p-2 rounded-lg text-green-600"><TrendingUp size={20} /></div>
               </div>
             </div>
-          );
-        };
-
-        // 5. Performance View
-        const PerformanceView = ({ machines, transactions, maintenanceEvents }) => {
-            // Current Month Metrics
-            const currentDate = new Date();
-            const currentYear = currentDate.getFullYear();
-            const currentMonth = currentDate.getMonth();
-            const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-            const monthStart = new Date(currentYear, currentMonth, 1);
-            const monthEnd = new Date(currentYear, currentMonth + 1, 0);
-
-            const metrics = useMemo(() => {
-                return machines.map(m => {
-                    // 1. Calculate Booked Days for this month
-                    let bookedDays = 0;
-                    let rentalIncome = 0;
-                    let maintenanceCost = 0;
-
-                    // Process Rentals from Transactions
-                    const machineRentals = transactions.filter(t => t.machineId === m.id && t.type === 'rental');
-                    machineRentals.forEach(t => {
-                        const tStart = new Date(t.startDate);
-                        const tEnd = new Date(t.endDate);
-
-                        // Start of overlap: max(tx_start, month_start)
-                        const startOverlap = tStart < monthStart ? monthStart : tStart;
-                        // End of overlap: min(tx_end, month_end)
-                        const endOverlap = tEnd > monthEnd ? monthEnd : tEnd;
-
-                        if (startOverlap <= endOverlap) {
-                                const days = (endOverlap - startOverlap) / (1000 * 60 * 60 * 24) + 1;
-                                bookedDays += days;
-                                rentalIncome += (days * t.rate);
-                        }
-                    });
-                    
-                    // Process Maintenance Costs from Maintenance Collection
-                    const machineMaint = maintenanceEvents.filter(me => me.machineId === m.id);
-                    machineMaint.forEach(me => {
-                        const meDate = new Date(me.date);
-                        if (meDate >= monthStart && meDate <= monthEnd) {
-                            maintenanceCost += (me.cost || 0);
-                        }
-                    });
-
-                    const vacantDays = daysInMonth - bookedDays;
-                    const loanCost = m.loan.active ? m.loan.payment : 0;
-                    const totalExpenses = loanCost + maintenanceCost;
-                    const netProfit = rentalIncome - totalExpenses;
-
-                    return {
-                        ...m,
-                        bookedDays,
-                        vacantDays,
-                        rentalIncome,
-                        totalExpenses,
-                        netProfit
-                    };
-                });
-            }, [machines, transactions, maintenanceEvents, currentYear, currentMonth]);
-
-            const totals = metrics.reduce((acc, curr) => ({
-                revenue: acc.revenue + curr.rentalIncome,
-                expenses: acc.expenses + curr.totalExpenses,
-                profit: acc.profit + curr.netProfit
-            }), { revenue: 0, expenses: 0, profit: 0 });
-
-            return (
-                <div className="space-y-6 animate-fadeIn">
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500">Total Revenue</p>
-                                    <h3 className="text-2xl font-bold text-slate-800 mt-1">${totals.revenue.toLocaleString()}</h3>
-                                </div>
-                                <div className="bg-green-100 p-2 rounded-lg text-green-600"><TrendingUp size={20}/></div>
-                            </div>
-                        </div>
-                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500">Total Expenses</p>
-                                    <h3 className="text-2xl font-bold text-slate-800 mt-1">${totals.expenses.toLocaleString()}</h3>
-                                    <p className="text-xs text-slate-400 mt-1">Loans & Maintenance</p>
-                                </div>
-                                <div className="bg-red-100 p-2 rounded-lg text-red-600"><TrendingDown size={20}/></div>
-                            </div>
-                        </div>
-                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500">Net Profit</p>
-                                    <h3 className={`text-2xl font-bold mt-1 ${totals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {totals.profit >= 0 ? '+' : ''}${totals.profit.toLocaleString()}
-                                    </h3>
-                                </div>
-                                <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><BarChart3 size={20}/></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Detailed Table */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 bg-slate-50">
-                            <h3 className="font-bold text-slate-700">Monthly Performance Breakdown ({currentDate.toLocaleString('default', { month: 'long' })})</h3>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
-                                    <tr>
-                                        <th className="p-4">Machine</th>
-                                        <th className="p-4">Utilization (Days)</th>
-                                        <th className="p-4 text-right">Revenue</th>
-                                        <th className="p-4 text-right">Expenses</th>
-                                        <th className="p-4 text-right">Net Profit</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {metrics.map(m => (
-                                        <tr key={m.id} className="hover:bg-slate-50">
-                                            <td className="p-4 font-medium text-slate-800">
-                                                {m.name}
-                                                <div className="text-xs text-slate-400 font-normal">{m.type}</div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="font-bold text-slate-700">{Math.round(m.bookedDays)}</span>
-                                                    <span className="text-slate-400">/ {daysInMonth} days</span>
-                                                </div>
-                                                <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className={`h-full rounded-full ${m.bookedDays > 20 ? 'bg-green-500' : m.bookedDays > 10 ? 'bg-amber-400' : 'bg-slate-300'}`} 
-                                                        style={{ width: `${(m.bookedDays / daysInMonth) * 100}%` }}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-right text-green-600 font-mono">
-                                                ${m.rentalIncome.toLocaleString()}
-                                            </td>
-                                            <td className="p-4 text-right text-red-500 font-mono">
-                                                ${m.totalExpenses.toLocaleString()}
-                                            </td>
-                                            <td className={`p-4 text-right font-bold font-mono ${m.netProfit >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
-                                                ${m.netProfit.toLocaleString()}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Total Expenses</p>
+                  <h3 className="text-2xl font-bold text-slate-800 mt-1">${totals.expenses.toLocaleString()}</h3>
+                  <p className="text-xs text-slate-400 mt-1">Loans & Maintenance</p>
                 </div>
-            );
+                <div className="bg-red-100 p-2 rounded-lg text-red-600"><TrendingDown size={20} /></div>
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Net Profit</p>
+                  <h3 className={`text-2xl font-bold mt-1 ${totals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {totals.profit >= 0 ? '+' : ''}${totals.profit.toLocaleString()}
+                  </h3>
+                </div>
+                <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><BarChart3 size={20} /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50">
+              <h3 className="font-bold text-slate-700">Monthly Performance Breakdown ({currentDate.toLocaleString('default', { month: 'long' })})</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                  <tr>
+                    <th className="p-4">Machine</th>
+                    <th className="p-4">Utilization (Days)</th>
+                    <th className="p-4 text-right">Revenue</th>
+                    <th className="p-4 text-right">Expenses</th>
+                    <th className="p-4 text-right">Net Profit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {metrics.map(m => (
+                    <tr key={m.id} className="hover:bg-slate-50">
+                      <td className="p-4 font-medium text-slate-800">
+                        {m.name}
+                        <div className="text-xs text-slate-400 font-normal">{m.type}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-slate-700">{Math.round(m.bookedDays)}</span>
+                          <span className="text-slate-400">/ {daysInMonth} days</span>
+                        </div>
+                        <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${m.bookedDays > 20 ? 'bg-green-500' : m.bookedDays > 10 ? 'bg-amber-400' : 'bg-slate-300'}`}
+                            style={{ width: `${(m.bookedDays / daysInMonth) * 100}%` }}
+                          />
+                        </div>
+                      </td>
+                      <td className="p-4 text-right text-green-600 font-mono">
+                        ${m.rentalIncome.toLocaleString()}
+                      </td>
+                      <td className="p-4 text-right text-red-500 font-mono">
+                        ${m.totalExpenses.toLocaleString()}
+                      </td>
+                      <td className={`p-4 text-right font-bold font-mono ${m.netProfit >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+                        ${m.netProfit.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- Main App Component ---
+    const App = () => {
+      const [user, setUser] = useState(null);
+      const [view, setView] = useState('calendar');
+      const [machines, setMachines] = useState([]);
+      const [transactions, setTransactions] = useState([]);
+      const [maintenanceEvents, setMaintenanceEvents] = useState([]);
+
+      // Editing state
+      const [editingId, setEditingId] = useState(null);
+      const [editRate, setEditRate] = useState('');
+
+      // --- Auth & Data Loading ---
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              // Canvas Environment: Use the secure token provided
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              // Exported/Local Environment: Use Anonymous Auth
+              await signInAnonymously(auth);
+            }
+          } catch (e) {
+            console.error("Auth Failed:", e);
+          }
         };
+        initAuth();
 
-        // --- Main App Component ---
-        const App = () => {
-          const [user, setUser] = useState(null);
-          const [view, setView] = useState('calendar'); 
-          const [machines, setMachines] = useState([]);
-          const [transactions, setTransactions] = useState([]);
-          const [maintenanceEvents, setMaintenanceEvents] = useState([]);
-          
-          // Editing state
-          const [editingId, setEditingId] = useState(null);
-          const [editRate, setEditRate] = useState('');
+        return onAuthStateChanged(auth, (u) => setUser(u));
+      }, []);
 
-          // --- Auth & Data Loading ---
-          useEffect(() => {
-            const initAuth = async () => {
-              try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    // Canvas Environment: Use the secure token provided
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    // Exported/Local Environment: Use Anonymous Auth
-                    await signInAnonymously(auth);
-                }
-              } catch (e) {
-                console.error("Auth Failed:", e);
-              }
-            };
-            initAuth();
-            
-            return onAuthStateChanged(auth, (u) => setUser(u));
-          }, []);
+      // --- Seeding & Subscription ---
+      useEffect(() => {
+        if (!user) return;
 
-          // --- Seeding & Subscription ---
-          useEffect(() => {
-            if (!user) return;
+        const machinesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'machines');
+        const transRef = collection(db, 'artifacts', appId, 'users', user.uid, 'transactions');
+        const maintRef = collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance');
 
-            const machinesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'machines');
-            const transRef = collection(db, 'artifacts', appId, 'users', user.uid, 'transactions');
-            const maintRef = collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance');
+        // 1. Check for empty DB and Seed
+        const seedDatabase = async () => {
+          try {
+            const snap = await getDocs(machinesRef);
+            if (snap.empty) {
+              console.log("Starting DB Seed...");
+              const batch = writeBatch(db);
 
-            // 1. Check for empty DB and Seed
-            const seedDatabase = async () => {
-              try {
-                const snap = await getDocs(machinesRef);
-                if (snap.empty) {
-                  console.log("Starting DB Seed...");
-                  const batch = writeBatch(db);
-                  
-                  // Seed Machines
-                  SEED_MACHINES.forEach(m => {
-                     const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'machines', m.id);
-                     batch.set(ref, m);
-                  });
-
-                  // Seed Transactions
-                  SEED_TRANSACTIONS.forEach(t => {
-                     const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
-                     batch.set(ref, t);
-                  });
-                  
-                  // Seed Maintenance
-                  SEED_MAINTENANCE.forEach(m => {
-                     const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'));
-                     batch.set(ref, m);
-                  });
-
-                  await batch.commit();
-                  console.log("Database seeded successfully!");
-                }
-              } catch (err) {
-                console.error("Seeding failed:", err);
-              }
-            };
-            
-            seedDatabase();
-
-            // 2. Subscribe to Machines
-            const unsubMachines = onSnapshot(machinesRef, (snapshot) => {
-               setMachines(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-            }, (error) => console.error("Error fetching machines:", error));
-
-            // 3. Subscribe to Transactions
-            const unsubTrans = onSnapshot(transRef, (snapshot) => {
-               setTransactions(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-            }, (error) => console.error("Error fetching transactions:", error));
-
-            // 4. Subscribe to Maintenance
-            const unsubMaint = onSnapshot(maintRef, (snapshot) => {
-               setMaintenanceEvents(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-            }, (error) => console.error("Error fetching maintenance:", error));
-
-            return () => {
-              unsubMachines();
-              unsubTrans();
-              unsubMaint();
-            };
-          }, [user]);
-
-
-          // --- Actions ---
-
-          const handleAddMachine = async (newMachine) => {
-            if (!user) return;
-            try {
-              await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'machines'), newMachine);
-              setView('list');
-            } catch (e) { console.error("Error adding machine: ", e); }
-          };
-
-          const handleRent = async (newTx) => {
-            if (!user) return;
-            try {
-              await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), newTx);
-              setView('calendar');
-            } catch (e) { console.error("Error renting: ", e); }
-          };
-
-          const handleScheduleMaintenance = async ({ machineId, date, description, cost, actionType }) => {
-            if (!user) return;
-            const newTx = {
-              machineId,
-              description,
-              date,
-              cost,
-              status: actionType, // 'schedule' or 'complete'
-              ...(actionType === 'complete' && { completedAt: new Date().toISOString() }) // Add timestamp if completed
-            };
-
-            try {
-              // 1. Add to MAINTENANCE Collection (Refactored from Transactions)
-              await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'), newTx);
-              
-              // 2. Update Machine Next Date
-              const machine = machines.find(m => m.id === machineId);
-              if (machine) {
-                let nextDt;
-                
-                if (actionType === 'complete') {
-                    // If completing, advance to the NEXT cycle
-                    nextDt = new Date(date);
-                    if (machine.maintenance.frequency === 'Weekly') nextDt.setDate(nextDt.getDate() + 7);
-                    else if (machine.maintenance.frequency === 'Monthly') nextDt.setMonth(nextDt.getMonth() + 1);
-                    else if (machine.maintenance.frequency === 'Quarterly') nextDt.setMonth(nextDt.getMonth() + 3);
-                    else if (machine.maintenance.frequency === 'Annually') nextDt.setFullYear(nextDt.getFullYear() + 1);
-                } else {
-                    // If just scheduling, set the reminder to the specific date chosen
-                    nextDt = new Date(date);
-                }
-                
-                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'machines', machineId), {
-                   'maintenance.nextDate': nextDt.toISOString().split('T')[0]
-                });
-              }
-              alert(actionType === 'complete' ? 'Maintenance completed & next cycle scheduled!' : 'Maintenance scheduled!');
-            } catch (e) { console.error("Error maint: ", e); }
-          };
-          
-          const saveRate = async (id) => {
-            if (!user) return;
-            try {
-              await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'machines', id), {
-                baseRate: Number(editRate)
+              // Seed Machines
+              SEED_MACHINES.forEach(m => {
+                const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'machines', m.id);
+                batch.set(ref, m);
               });
-              setEditingId(null);
-            } catch (e) { console.error("Error updating rate: ", e); }
-          };
 
-          // Calculate some simple stats
-          const activeRentals = transactions.filter(t => {
-            const today = new Date().toISOString().split('T')[0];
-            return t.startDate <= today && t.endDate >= today && t.type === 'rental';
-          }).length;
-          
-          const upcomingMaintenance = machines.filter(m => {
-              const today = new Date().toISOString().split('T')[0];
-              const nextDate = m.maintenance.nextDate;
-              const diffTime = new Date(nextDate) - new Date(today);
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-              return diffDays <= 7 && diffDays >= -30;
-          }).length;
+              // Seed Transactions
+              SEED_TRANSACTIONS.forEach(t => {
+                const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
+                batch.set(ref, t);
+              });
 
-          if (!user) return <div className="flex h-screen items-center justify-center text-slate-500">Connecting to Database...</div>;
+              // Seed Maintenance
+              SEED_MAINTENANCE.forEach(m => {
+                const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'));
+                batch.set(ref, m);
+              });
 
-          return (
-            <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
-              {/* Top Navigation Bar */}
-              <nav className="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-yellow-500 p-2 rounded-lg text-slate-900 font-bold">EQ</div>
-                    <h1 className="text-xl font-bold tracking-tight">EquipTrack Pro</h1>
-                  </div>
-                  <div className="flex gap-2 bg-slate-800 p-1 rounded-lg overflow-x-auto max-w-full">
-                    <button 
-                      onClick={() => setView('calendar')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'calendar' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      Calendar
-                    </button>
-                    <button 
-                      onClick={() => setView('list')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'list' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      Fleet List
-                    </button>
-                    <button 
-                      onClick={() => setView('performance')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'performance' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      Performance
-                    </button>
-                    <button 
-                      onClick={() => setView('maintenance')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'maintenance' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      Maintenance
-                    </button>
-                    <button 
-                      onClick={() => setView('rent')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'rent' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      New Rental
-                    </button>
-                    <button 
-                      onClick={() => setView('add')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'add' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      Add Machine
-                    </button>
-                  </div>
-                </div>
-              </nav>
-
-              {/* Main Content Area */}
-              <main className="max-w-6xl mx-auto p-4 md:p-6">
-                
-                {/* Dashboard Status Bar */}
-                {(view === 'calendar' || view === 'maintenance') && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                      <div className="bg-blue-100 p-3 rounded-full text-blue-600"><Truck size={20}/></div>
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold uppercase">Total Fleet</p>
-                        <p className="text-xl font-bold">{machines.length}</p>
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                      <div className="bg-green-100 p-3 rounded-full text-green-600"><CheckCircle size={20}/></div>
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold uppercase">Active Rentals</p>
-                        <p className="text-xl font-bold">{activeRentals}</p>
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                      <div className="bg-amber-100 p-3 rounded-full text-amber-600"><AlertTriangle size={20}/></div>
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold uppercase">Maint. Due Soon</p>
-                        <p className="text-xl font-bold">{upcomingMaintenance}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* View Switcher */}
-                {view === 'add' && <AddMachine onAdd={handleAddMachine} onCancel={() => setView('calendar')} />}
-                
-                {view === 'rent' && <RentMachine machines={machines} onRent={handleRent} onCancel={() => setView('calendar')} />}
-                
-                {view === 'maintenance' && <MaintenanceTracker machines={machines} onSchedule={handleScheduleMaintenance} />}
-
-                {view === 'performance' && <PerformanceView machines={machines} transactions={transactions} maintenanceEvents={maintenanceEvents} />}
-                
-                {view === 'calendar' && <CalendarView machines={machines} transactions={transactions} maintenanceEvents={maintenanceEvents} />}
-
-                {view === 'list' && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-slate-800 mb-4">Fleet Inventory</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {machines.map(m => (
-                        <div key={m.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="font-bold text-lg text-slate-800">{m.name}</h3>
-                              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{m.type}</span>
-                            </div>
-                            
-                            <div className="text-right">
-                              {editingId === m.id ? (
-                                <div className="flex items-center gap-1 justify-end">
-                                   <span className="text-slate-400 text-sm">$</span>
-                                   <input 
-                                      type="number" 
-                                      value={editRate}
-                                      onChange={(e) => setEditRate(e.target.value)}
-                                      className="w-20 p-1 border rounded text-sm font-mono text-right"
-                                   />
-                                   <button onClick={() => saveRate(m.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Save size={16}/></button>
-                                   <button onClick={() => setEditingId(null)} className="p-1 text-red-400 hover:bg-red-50 rounded"><X size={16}/></button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-end gap-2 group">
-                                  <p className="font-mono font-bold text-green-600">${m.baseRate}<span className="text-xs text-slate-400 font-sans">/day</span></p>
-                                  <button 
-                                    onClick={() => { setEditingId(m.id); setEditRate(m.baseRate); }}
-                                    className="text-slate-400 hover:text-blue-600 p-1 transition-colors"
-                                    title="Edit Rate"
-                                  >
-                                    <Pencil size={14} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2 mt-4 pt-4 border-t border-slate-100">
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <DollarSign size={14} className={m.loan.active ? "text-red-500" : "text-slate-300"} />
-                              {m.loan.active 
-                                ? <span>Loan: <strong>${m.loan.payment}</strong>/mo @ {m.loan.interest}%</span>
-                                : <span className="text-green-600 font-medium">Paid Off</span>
-                              }
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <Wrench size={14} className="text-amber-500" />
-                              <span>Next Maint: {formatDate(m.maintenance.nextDate)} ({m.maintenance.frequency})</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {machines.length === 0 && (
-                      <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-                        <p className="text-slate-400">No equipment found.</p>
-                        <button onClick={() => setView('add')} className="mt-2 text-blue-600 font-medium hover:underline">Add your first machine</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </main>
-            </div>
-          );
+              await batch.commit();
+              console.log("Database seeded successfully!");
+            }
+          } catch (err) {
+            console.error("Seeding failed:", err);
+          }
         };
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+        seedDatabase();
+
+        // 2. Subscribe to Machines
+        const unsubMachines = onSnapshot(machinesRef, (snapshot) => {
+          setMachines(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+        }, (error) => console.error("Error fetching machines:", error));
+
+        // 3. Subscribe to Transactions
+        const unsubTrans = onSnapshot(transRef, (snapshot) => {
+          setTransactions(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+        }, (error) => console.error("Error fetching transactions:", error));
+
+        // 4. Subscribe to Maintenance
+        const unsubMaint = onSnapshot(maintRef, (snapshot) => {
+          setMaintenanceEvents(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+        }, (error) => console.error("Error fetching maintenance:", error));
+
+        return () => {
+          unsubMachines();
+          unsubTrans();
+          unsubMaint();
+        };
+      }, [user]);
+
+
+      // --- Actions ---
+
+      const handleAddMachine = async (newMachine) => {
+        if (!user) return;
+        try {
+          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'machines'), newMachine);
+          setView('list');
+        } catch (e) { console.error("Error adding machine: ", e); }
+      };
+
+      const handleRent = async (newTx) => {
+        if (!user) return;
+        try {
+          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), newTx);
+          setView('calendar');
+        } catch (e) { console.error("Error renting: ", e); }
+      };
+
+      const handleScheduleMaintenance = async ({ machineId, date, description, cost, actionType }) => {
+        if (!user) return;
+        const newTx = {
+          machineId,
+          description,
+          date,
+          cost,
+          status: actionType, // 'schedule' or 'complete'
+          ...(actionType === 'complete' && { completedAt: new Date().toISOString() }) // Add timestamp if completed
+        };
+
+        try {
+          // 1. Add to MAINTENANCE Collection (Refactored from Transactions)
+          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'), newTx);
+
+          // 2. Update Machine Next Date
+          const machine = machines.find(m => m.id === machineId);
+          if (machine) {
+            let nextDt;
+
+            if (actionType === 'complete') {
+              // If completing, advance to the NEXT cycle
+              nextDt = new Date(date);
+              if (machine.maintenance.frequency === 'Weekly') nextDt.setDate(nextDt.getDate() + 7);
+              else if (machine.maintenance.frequency === 'Monthly') nextDt.setMonth(nextDt.getMonth() + 1);
+              else if (machine.maintenance.frequency === 'Quarterly') nextDt.setMonth(nextDt.getMonth() + 3);
+              else if (machine.maintenance.frequency === 'Annually') nextDt.setFullYear(nextDt.getFullYear() + 1);
+            } else {
+              // If just scheduling, set the reminder to the specific date chosen
+              nextDt = new Date(date);
+            }
+
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'machines', machineId), {
+              'maintenance.nextDate': nextDt.toISOString().split('T')[0]
+            });
+          }
+          alert(actionType === 'complete' ? 'Maintenance completed & next cycle scheduled!' : 'Maintenance scheduled!');
+        } catch (e) { console.error("Error maint: ", e); }
+      };
+
+      const saveRate = async (id) => {
+        if (!user) return;
+        try {
+          await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'machines', id), {
+            baseRate: Number(editRate)
+          });
+          setEditingId(null);
+        } catch (e) { console.error("Error updating rate: ", e); }
+      };
+
+      // Calculate some simple stats
+      const activeRentals = transactions.filter(t => {
+        const today = new Date().toISOString().split('T')[0];
+        return t.startDate <= today && t.endDate >= today && t.type === 'rental';
+      }).length;
+
+      const upcomingMaintenance = machines.filter(m => {
+        const today = new Date().toISOString().split('T')[0];
+        const nextDate = m.maintenance.nextDate;
+        const diffTime = new Date(nextDate) - new Date(today);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 7 && diffDays >= -30;
+      }).length;
+
+      if (!user) return <div className="flex h-screen items-center justify-center text-slate-500">Connecting to Database...</div>;
+
+      return (
+        <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
+          {/* Top Navigation Bar */}
+          <nav className="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
+            <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-yellow-500 p-2 rounded-lg text-slate-900 font-bold">EQ</div>
+                <h1 className="text-xl font-bold tracking-tight">EquipTrack Pro</h1>
+              </div>
+              <div className="flex gap-2 bg-slate-800 p-1 rounded-lg overflow-x-auto max-w-full">
+                <button
+                  onClick={() => setView('calendar')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'calendar' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Calendar
+                </button>
+                <button
+                  onClick={() => setView('list')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'list' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Fleet List
+                </button>
+                <button
+                  onClick={() => setView('performance')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'performance' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Performance
+                </button>
+                <button
+                  onClick={() => setView('maintenance')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'maintenance' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Maintenance
+                </button>
+                <button
+                  onClick={() => setView('rent')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'rent' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  New Rental
+                </button>
+                <button
+                  onClick={() => setView('add')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${view === 'add' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Add Machine
+                </button>
+              </div>
+            </div>
+          </nav>
+
+          {/* Main Content Area */}
+          <main className="max-w-6xl mx-auto p-4 md:p-6">
+
+            {/* Dashboard Status Bar */}
+            {(view === 'calendar' || view === 'maintenance') && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                  <div className="bg-blue-100 p-3 rounded-full text-blue-600"><Truck size={20} /></div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold uppercase">Total Fleet</p>
+                    <p className="text-xl font-bold">{machines.length}</p>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                  <div className="bg-green-100 p-3 rounded-full text-green-600"><CheckCircle size={20} /></div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold uppercase">Active Rentals</p>
+                    <p className="text-xl font-bold">{activeRentals}</p>
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                  <div className="bg-amber-100 p-3 rounded-full text-amber-600"><AlertTriangle size={20} /></div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold uppercase">Maint. Due Soon</p>
+                    <p className="text-xl font-bold">{upcomingMaintenance}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* View Switcher */}
+            {view === 'add' && <AddMachine onAdd={handleAddMachine} onCancel={() => setView('calendar')} />}
+
+            {view === 'rent' && <RentMachine machines={machines} onRent={handleRent} onCancel={() => setView('calendar')} />}
+
+            {view === 'maintenance' && <MaintenanceTracker machines={machines} onSchedule={handleScheduleMaintenance} />}
+
+            {view === 'performance' && <PerformanceView machines={machines} transactions={transactions} maintenanceEvents={maintenanceEvents} />}
+
+            {view === 'calendar' && <CalendarView machines={machines} transactions={transactions} maintenanceEvents={maintenanceEvents} />}
+
+            {view === 'list' && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold text-slate-800 mb-4">Fleet Inventory</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {machines.map(m => (
+                    <div key={m.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-bold text-lg text-slate-800">{m.name}</h3>
+                          <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{m.type}</span>
+                        </div>
+
+                        <div className="text-right">
+                          {editingId === m.id ? (
+                            <div className="flex items-center gap-1 justify-end">
+                              <span className="text-slate-400 text-sm">$</span>
+                              <input
+                                type="number"
+                                value={editRate}
+                                onChange={(e) => setEditRate(e.target.value)}
+                                className="w-20 p-1 border rounded text-sm font-mono text-right"
+                              />
+                              <button onClick={() => saveRate(m.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Save size={16} /></button>
+                              <button onClick={() => setEditingId(null)} className="p-1 text-red-400 hover:bg-red-50 rounded"><X size={16} /></button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2 group">
+                              <p className="font-mono font-bold text-green-600">${m.baseRate}<span className="text-xs text-slate-400 font-sans">/day</span></p>
+                              <button
+                                onClick={() => { setEditingId(m.id); setEditRate(m.baseRate); }}
+                                className="text-slate-400 hover:text-blue-600 p-1 transition-colors"
+                                title="Edit Rate"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mt-4 pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <DollarSign size={14} className={m.loan.active ? "text-red-500" : "text-slate-300"} />
+                          {m.loan.active
+                            ? <span>Loan: <strong>${m.loan.payment}</strong>/mo @ {m.loan.interest}%</span>
+                            : <span className="text-green-600 font-medium">Paid Off</span>
+                          }
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Wrench size={14} className="text-amber-500" />
+                          <span>Next Maint: {formatDate(m.maintenance.nextDate)} ({m.maintenance.frequency})</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {machines.length === 0 && (
+                  <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+                    <p className="text-slate-400">No equipment found.</p>
+                    <button onClick={() => setView('add')} className="mt-2 text-blue-600 font-medium hover:underline">Add your first machine</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </main>
+        </div>
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
+
 </html>
