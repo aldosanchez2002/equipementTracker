@@ -43,8 +43,15 @@
         } from "firebase/auth";
 
         // --- Configuration ---
-        // Use the environment's built-in configuration to ensure compatibility with the auth token
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // Prioritize environment config for Canvas authentication, fallback to user provided config for local dev
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyATXRPfV9NgttQ3ompCk-xeVOqvm6uIU6s",
+            authDomain: "equipmenttracker-857f8.firebaseapp.com",
+            projectId: "equipmenttracker-857f8",
+            storageBucket: "equipmenttracker-857f8.firebasestorage.app",
+            messagingSenderId: "1088031272040",
+            appId: "1:1088031272040:web:44cd3b106b66f2535a5fdd"
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -749,31 +756,35 @@
 
             // 1. Check for empty DB and Seed
             const seedDatabase = async () => {
-              const snap = await getDocs(machinesRef);
-              if (snap.empty) {
-                console.log("Seeding Database...");
-                const batch = writeBatch(db);
-                
-                // Seed Machines (using specific IDs to maintain link with transactions)
-                SEED_MACHINES.forEach(m => {
-                   const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'machines', m.id);
-                   batch.set(ref, m);
-                });
+              try {
+                const snap = await getDocs(machinesRef);
+                if (snap.empty) {
+                  console.log("Starting DB Seed...");
+                  const batch = writeBatch(db);
+                  
+                  // Seed Machines
+                  SEED_MACHINES.forEach(m => {
+                     const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'machines', m.id);
+                     batch.set(ref, m);
+                  });
 
-                // Seed Transactions
-                SEED_TRANSACTIONS.forEach(t => {
-                   const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
-                   batch.set(ref, t);
-                });
-                
-                // Seed Maintenance
-                SEED_MAINTENANCE.forEach(m => {
-                   const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'));
-                   batch.set(ref, m);
-                });
+                  // Seed Transactions
+                  SEED_TRANSACTIONS.forEach(t => {
+                     const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
+                     batch.set(ref, t);
+                  });
+                  
+                  // Seed Maintenance
+                  SEED_MAINTENANCE.forEach(m => {
+                     const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'));
+                     batch.set(ref, m);
+                  });
 
-                await batch.commit();
-                console.log("Database seeded!");
+                  await batch.commit();
+                  console.log("Database seeded successfully!");
+                }
+              } catch (err) {
+                console.error("Seeding failed:", err);
               }
             };
             
