@@ -30,7 +30,7 @@
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { Plus, Calendar as CalendarIcon, Truck, DollarSign, Wrench, ChevronLeft, ChevronRight, Search, CheckCircle, AlertCircle, AlertTriangle, Clock, Pencil, Save, X, Database, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+        import { Plus, Calendar as CalendarIcon, Truck, DollarSign, Wrench, ChevronLeft, ChevronRight, Search, CheckCircle, AlertCircle, AlertTriangle, Clock, Pencil, Save, X, Database, BarChart3, TrendingUp, TrendingDown, Lock } from 'lucide-react';
 
         // --- Firebase Imports ---
         import { initializeApp } from "firebase/app";
@@ -43,7 +43,6 @@
         } from "firebase/auth";
 
         // --- Configuration ---
-        // Explicitly using the configuration provided by the user
         const firebaseConfig = {
           apiKey: "AIzaSyATXRPfV9NgttQ3ompCk-xeVOqvm6uIU6s",
           authDomain: "equipmenttracker-857f8.firebaseapp.com",
@@ -58,9 +57,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Use the environment's App ID to segregate data in the shared sandbox, 
-        // or a default ID for the private project.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'equipment-tracker-default';
+        // Use a consistent ID for the path
+        const appId = 'equipment-tracker-default';
 
         // --- Mock Data for Seeding ---
         const SEED_MACHINES = [
@@ -729,6 +727,8 @@
           const [transactions, setTransactions] = useState([]);
           const [maintenanceEvents, setMaintenanceEvents] = useState([]);
           const [authError, setAuthError] = useState(null);
+          const [permissionError, setPermissionError] = useState(false);
+          const [isSeeding, setIsSeeding] = useState(false);
           
           // Editing state
           const [editingId, setEditingId] = useState(null);
@@ -760,56 +760,28 @@
             const transRef = collection(db, 'artifacts', appId, 'users', user.uid, 'transactions');
             const maintRef = collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance');
 
-            // 1. Check for empty DB and Seed
-            const seedDatabase = async () => {
-              try {
-                const snap = await getDocs(machinesRef);
-                if (snap.empty) {
-                  console.log("Starting DB Seed...");
-                  const batch = writeBatch(db);
-                  
-                  // Seed Machines
-                  SEED_MACHINES.forEach(m => {
-                     const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'machines', m.id);
-                     batch.set(ref, m);
-                  });
-
-                  // Seed Transactions
-                  SEED_TRANSACTIONS.forEach(t => {
-                     const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
-                     batch.set(ref, t);
-                  });
-                  
-                  // Seed Maintenance
-                  SEED_MAINTENANCE.forEach(m => {
-                     const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'));
-                     batch.set(ref, m);
-                  });
-
-                  await batch.commit();
-                  console.log("Database seeded successfully!");
+            // Permission Error Handler
+            const handlePermissionError = (err) => {
+                console.error("Data fetch error:", err);
+                if (err.code === 'permission-denied') {
+                    setPermissionError(true);
                 }
-              } catch (err) {
-                console.error("Seeding failed:", err);
-              }
             };
-            
-            seedDatabase();
 
             // 2. Subscribe to Machines
             const unsubMachines = onSnapshot(machinesRef, (snapshot) => {
                setMachines(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-            }, (error) => console.error("Error fetching machines:", error));
+            }, handlePermissionError);
 
             // 3. Subscribe to Transactions
             const unsubTrans = onSnapshot(transRef, (snapshot) => {
                setTransactions(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-            }, (error) => console.error("Error fetching transactions:", error));
+            }, handlePermissionError);
 
             // 4. Subscribe to Maintenance
             const unsubMaint = onSnapshot(maintRef, (snapshot) => {
                setMaintenanceEvents(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-            }, (error) => console.error("Error fetching maintenance:", error));
+            }, handlePermissionError);
 
             return () => {
               unsubMachines();
@@ -817,6 +789,66 @@
               unsubMaint();
             };
           }, [user]);
+
+          // Manual Seed Function
+          const handleSeedData = async () => {
+            if (!user || isSeeding) return;
+            setIsSeeding(true);
+            
+            try {
+                console.log("Starting Manual Seed...");
+                const batch = writeBatch(db);
+                
+                // Seed Machines
+                SEED_MACHINES.forEach(m => {
+                   const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'machines', m.id);
+                   batch.set(ref, m);
+                });
+
+                // Seed Transactions
+                SEED_TRANSACTIONS.forEach(t => {
+                   const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
+                   batch.set(ref, t);
+                });
+                
+                // Seed Maintenance
+                SEED_MAINTENANCE.forEach(m => {
+                   const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'maintenance'));
+                   batch.set(ref, m);
+                });
+
+                await batch.commit();
+                console.log("Database seeded successfully!");
+                // Force view refresh or just let listeners handle it
+            } catch (err) {
+                console.error("Seeding failed:", err);
+                if (err.code === 'permission-denied') {
+                    setPermissionError(true);
+                } else {
+                    alert("Seeding failed: " + err.message);
+                }
+            } finally {
+                setIsSeeding(false);
+            }
+          };
+
+          // Automatic Seed Check on Load
+          useEffect(() => {
+             if (!user) return;
+             // Check if empty and seed automatically once
+             const checkAndSeed = async () => {
+                 const machinesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'machines');
+                 try {
+                    const snap = await getDocs(machinesRef);
+                    if (snap.empty) {
+                        handleSeedData();
+                    }
+                 } catch (e) {
+                     console.log("Auto-seed check failed (likely permissions), skipping.");
+                 }
+             };
+             checkAndSeed();
+          }, [user]); // Run once when user is authenticated
 
 
           // --- Actions ---
@@ -900,6 +932,41 @@
               const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
               return diffDays <= 7 && diffDays >= -30;
           }).length, [machines]);
+
+          if (permissionError) {
+            return (
+                <div className="flex h-screen items-center justify-center p-4 bg-red-50 text-red-900 font-sans">
+                    <div className="max-w-md bg-white p-6 rounded-lg shadow-xl border border-red-200">
+                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                            <Lock className="text-red-600" /> Database Permissions Error
+                        </h2>
+                        <p className="mb-4 text-sm">
+                            Your app is connected to Firebase, but the database is blocking access. 
+                            This usually happens when <strong>Firestore Rules</strong> are set to "production" (locked) mode.
+                        </p>
+                        <div className="bg-slate-100 p-3 rounded mb-4 text-xs font-mono overflow-x-auto whitespace-pre">
+rules_version = '2';{'\n'}
+service cloud.firestore &#123;{'\n'}
+&nbsp;&nbsp;match /databases/&#123;database&#125;/documents &#123;{'\n'}
+&nbsp;&nbsp;&nbsp;&nbsp;match /&#123;document=**&#125; &#123;{'\n'}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if request.auth != null;{'\n'}
+&nbsp;&nbsp;&nbsp;&nbsp;&#125;{'\n'}
+&nbsp;&nbsp;&#125;{'\n'}
+&#125;
+                        </div>
+                        <p className="text-sm">
+                            Go to <strong>Firebase Console &gt; Firestore Database &gt; Rules</strong> and paste the code above to allow authenticated users (like this app) to access data.
+                        </p>
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="mt-4 w-full bg-red-600 text-white p-2 rounded hover:bg-red-700 font-bold"
+                        >
+                            I've Updated Rules, Retry
+                        </button>
+                    </div>
+                </div>
+            )
+          }
 
           if (!user) {
             return (
@@ -1067,8 +1134,23 @@
                     </div>
                     {machines.length === 0 && (
                       <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-                        <p className="text-slate-400">No equipment found.</p>
-                        <button onClick={() => setView('add')} className="mt-2 text-blue-600 font-medium hover:underline">Add your first machine</button>
+                        <p className="text-slate-400 mb-4">No equipment found in database.</p>
+                        <div className="flex flex-col gap-2 items-center">
+                            <button 
+                                onClick={() => setView('add')} 
+                                className="text-blue-600 font-medium hover:underline"
+                            >
+                                Add your first machine manually
+                            </button>
+                            <span className="text-slate-300 text-xs">or</span>
+                            <button 
+                                onClick={handleSeedData} 
+                                disabled={isSeeding}
+                                className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+                            >
+                                {isSeeding ? 'Seeding Database...' : 'Populate with Sample Data'}
+                            </button>
+                        </div>
                       </div>
                     )}
                   </div>
