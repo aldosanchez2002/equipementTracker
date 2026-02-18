@@ -43,7 +43,8 @@
         } from "firebase/auth";
 
         // --- Configuration ---
-        // Prioritize environment config for Canvas authentication, fallback to user provided config for local dev
+        // 1. Try to use the environment's built-in config (Canvas Preview) to ensure Auth works immediately.
+        // 2. Fallback to the user's provided config (Local/Exported) for persistent usage.
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyATXRPfV9NgttQ3ompCk-xeVOqvm6uIU6s",
             authDomain: "equipmenttracker-857f8.firebaseapp.com",
@@ -58,7 +59,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Use the environment's App ID to segregate data
+        // Use the environment's App ID to segregate data in the shared sandbox, 
+        // or a default ID for the private project.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'equipment-tracker-default';
 
         // --- Mock Data for Seeding ---
@@ -735,10 +737,16 @@
           // --- Auth & Data Loading ---
           useEffect(() => {
             const initAuth = async () => {
-              if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-              } else {
-                await signInAnonymously(auth);
+              try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    // Canvas Environment: Use the secure token provided
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    // Exported/Local Environment: Use Anonymous Auth
+                    await signInAnonymously(auth);
+                }
+              } catch (e) {
+                console.error("Auth Failed:", e);
               }
             };
             initAuth();
